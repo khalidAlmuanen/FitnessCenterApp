@@ -1,12 +1,79 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using FitnessCenterApp.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace FitnessCenterApp.Data;
-
-public class ApplicationDbContext : IdentityDbContext
+namespace FitnessCenterApp.Data
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-        : base(options)
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options)
+        {
+        }
+
+        public DbSet<Gym> Gyms { get; set; }
+        public DbSet<Service> Services { get; set; }
+        public DbSet<Trainer> Trainers { get; set; }
+        public DbSet<TrainerAvailability> TrainerAvailabilities { get; set; }
+        public DbSet<Appointment> Appointments { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            // Gym -> Services
+            builder.Entity<Service>()
+                .HasOne(s => s.Gym)
+                .WithMany(g => g.Services)
+                .HasForeignKey(s => s.GymId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Gym -> Trainers
+            builder.Entity<Trainer>()
+                .HasOne(t => t.Gym)
+                .WithMany(g => g.Trainers)
+                .HasForeignKey(t => t.GymId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Service -> Trainers
+            builder.Entity<Trainer>()
+                .HasOne(t => t.Service)
+                .WithMany(s => s.Trainers)
+                .HasForeignKey(t => t.ServiceId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Trainer -> Availability
+            builder.Entity<TrainerAvailability>()
+                .HasOne(a => a.Trainer)
+                .WithMany(t => t.Availabilities)
+                .HasForeignKey(a => a.TrainerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Appointment -> Member
+            builder.Entity<Appointment>()
+                .HasOne(a => a.Member)
+                .WithMany(u => u.Appointments)
+                .HasForeignKey(a => a.MemberId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Appointment -> Trainer
+            builder.Entity<Appointment>()
+                .HasOne(a => a.Trainer)
+                .WithMany(t => t.Appointments)
+                .HasForeignKey(a => a.TrainerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Appointment -> Service
+            builder.Entity<Appointment>()
+                .HasOne(a => a.Service)
+                .WithMany(s => s.Appointments)
+                .HasForeignKey(a => a.ServiceId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Service>()
+                .Property(s => s.Price)
+                .HasPrecision(10, 2);
+
+        }
     }
 }
