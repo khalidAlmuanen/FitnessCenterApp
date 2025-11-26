@@ -20,11 +20,11 @@ namespace FitnessCenterApp.Models
 
         public string? Description { get; set; }
 
-        // FK
+        [Required]
+        [Display(Name = "Gym")]
         public int GymId { get; set; }
 
-        // Navigation
-        public Gym Gym { get; set; }
+        public Gym? Gym { get; set; }
         public ICollection<Trainer>? Trainers { get; set; }
         public ICollection<Appointment>? Appointments { get; set; }
     }
