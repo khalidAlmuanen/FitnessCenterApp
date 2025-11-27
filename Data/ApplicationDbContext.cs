@@ -74,6 +74,19 @@ namespace FitnessCenterApp.Data
                 .Property(s => s.Price)
                 .HasPrecision(10, 2);
 
+
+                builder.Entity<Gym>()
+                .HasIndex(g => g.Name)
+                .IsUnique();
+
+                builder.Entity<Service>()
+                .HasIndex(s => new { s.Name, s.GymId })
+                .IsUnique();
+
+                builder.Entity<Trainer>()
+                .HasIndex(t => new { t.FullName, t.GymId })
+                .IsUnique();
+
         }
     }
 }

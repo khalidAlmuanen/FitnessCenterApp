@@ -46,18 +46,31 @@ namespace FitnessCenterApp.Controllers
             return View();
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Gym gym)
-        {
-            if (ModelState.IsValid)
-            {
-                _context.Add(gym);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(gym);
-        }
+       [HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> Create(Gym gym)
+{
+    // فحص: هل يوجد صالة بنفس الاسم؟
+    bool exists = await _context.Gyms
+        .AnyAsync(g => g.Name == gym.Name);
+
+    if (exists)
+    {
+        // رسالة خطأ تظهر في أعلى الفورم (Validation Summary)
+        ModelState.AddModelError(string.Empty,
+            "Bu isimde bir spor salonu zaten kayıtlı.");
+    }
+
+    if (!ModelState.IsValid)
+    {
+        return View(gym);
+    }
+
+    _context.Add(gym);
+    await _context.SaveChangesAsync();
+    return RedirectToAction(nameof(Index));
+}
+
 
         // GET: Gym/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -71,29 +84,41 @@ namespace FitnessCenterApp.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Gym gym)
-        {
-            if (id != gym.Id) return NotFound();
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> Edit(int id, Gym gym)
+{
+    if (id != gym.Id) return NotFound();
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(gym);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!GymExists(gym.Id))
-                        return NotFound();
-                    else
-                        throw;
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(gym);
-        }
+    // فحص: هل يوجد صالة أخرى (غير الحالية) بنفس الاسم؟
+    bool exists = await _context.Gyms
+        .AnyAsync(g => g.Id != gym.Id && g.Name == gym.Name);
+
+    if (exists)
+    {
+        ModelState.AddModelError(string.Empty,
+            "Bu isimde bir spor salonu zaten kayıtlı.");
+    }
+
+    if (!ModelState.IsValid)
+    {
+        return View(gym);
+    }
+
+    try
+    {
+        _context.Update(gym);
+        await _context.SaveChangesAsync();
+    }
+    catch (DbUpdateConcurrencyException)
+    {
+        if (!GymExists(gym.Id))
+            return NotFound();
+        else
+            throw;
+    }
+    return RedirectToAction(nameof(Index));
+}
+
 
         // GET: Gym/Delete/5
         public async Task<IActionResult> Delete(int? id)

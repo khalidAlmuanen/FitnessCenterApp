@@ -48,21 +48,31 @@ namespace FitnessCenterApp.Controllers
             return View();
         }
 
-        // POST: Service/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Service service)
-        {
-            if (ModelState.IsValid)
-            {
-                _context.Add(service);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
+       [HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> Create(Service service)
+{
+    // فحص: هل يوجد خدمة بنفس الاسم في نفس الصالة؟
+    bool exists = await _context.Services
+        .AnyAsync(s => s.Name == service.Name && s.GymId == service.GymId);
 
-            await LoadGymsDropDownList(service.GymId);
-            return View(service);
-        }
+    if (exists)
+    {
+        ModelState.AddModelError(string.Empty,
+            "Bu spor salonunda aynı isimde bir hizmet zaten kayıtlı.");
+    }
+
+    if (!ModelState.IsValid)
+    {
+        await LoadGymsDropDownList(service.GymId);
+        return View(service);
+    }
+
+    _context.Add(service);
+    await _context.SaveChangesAsync();
+    return RedirectToAction(nameof(Index));
+}
+
 
         // GET: Service/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -76,33 +86,46 @@ namespace FitnessCenterApp.Controllers
             return View(service);
         }
 
-        // POST: Service/Edit/5
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Service service)
-        {
-            if (id != service.Id) return NotFound();
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> Edit(int id, Service service)
+{
+    if (id != service.Id) return NotFound();
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(service);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ServiceExists(service.Id))
-                        return NotFound();
-                    else
-                        throw;
-                }
-                return RedirectToAction(nameof(Index));
-            }
+    // فحص: هل يوجد خدمة أخرى (غير الحالية) بنفس الاسم في نفس الصالة؟
+    bool exists = await _context.Services
+        .AnyAsync(s => s.Id != service.Id &&
+                       s.Name == service.Name &&
+                       s.GymId == service.GymId);
 
-            await LoadGymsDropDownList(service.GymId);
-            return View(service);
-        }
+    if (exists)
+    {
+        ModelState.AddModelError(string.Empty,
+            "Bu spor salonunda aynı isimde bir hizmet zaten kayıtlı.");
+    }
+
+    if (!ModelState.IsValid)
+    {
+        await LoadGymsDropDownList(service.GymId);
+        return View(service);
+    }
+
+    try
+    {
+        _context.Update(service);
+        await _context.SaveChangesAsync();
+    }
+    catch (DbUpdateConcurrencyException)
+    {
+        if (!ServiceExists(service.Id))
+            return NotFound();
+        else
+            throw;
+    }
+
+    return RedirectToAction(nameof(Index));
+}
+
 
         // GET: Service/Delete/5
         public async Task<IActionResult> Delete(int? id)

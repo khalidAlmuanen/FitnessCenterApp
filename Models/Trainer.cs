@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace FitnessCenterApp.Models
@@ -6,27 +7,40 @@ namespace FitnessCenterApp.Models
     {
         public int Id { get; set; }
 
-        [Required, MaxLength(150)]
+        [Required(ErrorMessage = "Ad Soyad alanı zorunludur.")]
+        [MaxLength(150, ErrorMessage = "Ad Soyad en fazla 150 karakter olabilir.")]
+        [Display(Name = "Ad Soyad")]
         public string FullName { get; set; }
 
-        [MaxLength(100)]
+        [MaxLength(100, ErrorMessage = "Uzmanlık alanı en fazla 100 karakter olabilir.")]
+        [Display(Name = "Uzmanlık Alanı")]
         public string? Specialization { get; set; } // Uzmanlık Alanı
 
-        [Range(0, 50)]
-        public int ExperienceYears { get; set; }
+        [Range(0, 50, ErrorMessage = "Deneyim yılı 0 ile 50 arasında olmalıdır.")]
+        [Display(Name = "Deneyim (Yıl)")]
+        public int? ExperienceYears { get; set; }  // اختياري
 
-        [Range(0, 5)]
-        public double Rating { get; set; }
+        [Range(0, 5, ErrorMessage = "Puan 0 ile 5 arasında olmalıdır.")]
+        [Display(Name = "Puan")]
+        public double? Rating { get; set; }    // اختياري، يمكن تعبئته لاحقاً
 
-        // FK
+        [Required(ErrorMessage = "Spor salonu seçimi zorunludur.")]
+        [Display(Name = "Spor Salonu")]
         public int GymId { get; set; }
+
+        [Display(Name = "Ana Hizmet")]
         public int? ServiceId { get; set; } // Optional main service
 
-        // Navigation
-        public Gym Gym { get; set; }
+        // ⚠️ لا نضع Required هنا
+        public Gym? Gym { get; set; }
+
+        [Display(Name = "Hizmet")]
         public Service? Service { get; set; }
 
-        public ICollection<TrainerAvailability>? Availabilities { get; set; }
-        public ICollection<Appointment>? Appointments { get; set; }
+        [Display(Name = "Müsaitlikler")]
+        public ICollection<TrainerAvailability>? Availabilities { get; set; } = new List<TrainerAvailability>();
+
+        [Display(Name = "Randevular")]
+        public ICollection<Appointment>? Appointments { get; set; } = new List<Appointment>();
     }
 }
