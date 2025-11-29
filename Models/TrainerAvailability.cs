@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace FitnessCenterApp.Models
@@ -6,20 +7,28 @@ namespace FitnessCenterApp.Models
     {
         public int Id { get; set; }
 
+        [Required(ErrorMessage = "Antrenör seçimi zorunludur.")]
+        [Display(Name = "Antrenör")]
         public int TrainerId { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Gün alanı zorunludur.")]
+        [Display(Name = "Gün")]
         public DayOfWeek Day { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Başlangıç saati zorunludur.")]
+        [Display(Name = "Başlangıç Saati")]
+        [DataType(DataType.Time)]
         public TimeSpan StartTime { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Bitiş saati zorunludur.")]
+        [Display(Name = "Bitiş Saati")]
+        [DataType(DataType.Time)]
         public TimeSpan EndTime { get; set; }
 
+        [Display(Name = "Aktif mi?")]
         public bool IsActive { get; set; } = true;
 
-        // Navigation
-        public Trainer Trainer { get; set; }
+        [Display(Name = "Antrenör")]
+        public Trainer? Trainer { get; set; }
     }
 }
