@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FitnessCenterApp.Data;
 using FitnessCenterApp.Models;
+using Microsoft.AspNetCore.Authorization;   // <== مهم
 
 namespace FitnessCenterApp.Controllers
 {
+    [Authorize]   // يتطلب تسجيل دخول لكل الأكشنات في هذا الكنترولر
     public class GymController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -15,6 +17,8 @@ namespace FitnessCenterApp.Controllers
         {
             _context = context;
         }
+
+        // ========== عرض الصالات (مسموح لأي مستخدم مسجّل) ==========
 
         public async Task<IActionResult> Index()
         {
@@ -41,38 +45,41 @@ namespace FitnessCenterApp.Controllers
             return View(gym);
         }
 
+        // ========== الأكشنات الإدارية (أدمن فقط) ==========
+
+        [Authorize(Roles = "Admin")]
         public IActionResult Create()
         {
             return View();
         }
 
-       [HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> Create(Gym gym)
-{
-    // فحص: هل يوجد صالة بنفس الاسم؟
-    bool exists = await _context.Gyms
-        .AnyAsync(g => g.Name == gym.Name);
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Create(Gym gym)
+        {
+            // فحص: هل يوجد صالة بنفس الاسم؟
+            bool exists = await _context.Gyms
+                .AnyAsync(g => g.Name == gym.Name);
 
-    if (exists)
-    {
-        // رسالة خطأ تظهر في أعلى الفورم (Validation Summary)
-        ModelState.AddModelError(string.Empty,
-            "Bu isimde bir spor salonu zaten kayıtlı.");
-    }
+            if (exists)
+            {
+                ModelState.AddModelError(string.Empty,
+                    "Bu isimde bir spor salonu zaten kayıtlı.");
+            }
 
-    if (!ModelState.IsValid)
-    {
-        return View(gym);
-    }
+            if (!ModelState.IsValid)
+            {
+                return View(gym);
+            }
 
-    _context.Add(gym);
-    await _context.SaveChangesAsync();
-    return RedirectToAction(nameof(Index));
-}
-
+            _context.Add(gym);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
 
         // GET: Gym/Edit/5
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
@@ -84,43 +91,44 @@ public async Task<IActionResult> Create(Gym gym)
         }
 
         [HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> Edit(int id, Gym gym)
-{
-    if (id != gym.Id) return NotFound();
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Edit(int id, Gym gym)
+        {
+            if (id != gym.Id) return NotFound();
 
-    // فحص: هل يوجد صالة أخرى (غير الحالية) بنفس الاسم؟
-    bool exists = await _context.Gyms
-        .AnyAsync(g => g.Id != gym.Id && g.Name == gym.Name);
+            // فحص: هل يوجد صالة أخرى (غير الحالية) بنفس الاسم؟
+            bool exists = await _context.Gyms
+                .AnyAsync(g => g.Id != gym.Id && g.Name == gym.Name);
 
-    if (exists)
-    {
-        ModelState.AddModelError(string.Empty,
-            "Bu isimde bir spor salonu zaten kayıtlı.");
-    }
+            if (exists)
+            {
+                ModelState.AddModelError(string.Empty,
+                    "Bu isimde bir spor salonu zaten kayıtlı.");
+            }
 
-    if (!ModelState.IsValid)
-    {
-        return View(gym);
-    }
+            if (!ModelState.IsValid)
+            {
+                return View(gym);
+            }
 
-    try
-    {
-        _context.Update(gym);
-        await _context.SaveChangesAsync();
-    }
-    catch (DbUpdateConcurrencyException)
-    {
-        if (!GymExists(gym.Id))
-            return NotFound();
-        else
-            throw;
-    }
-    return RedirectToAction(nameof(Index));
-}
-
+            try
+            {
+                _context.Update(gym);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!GymExists(gym.Id))
+                    return NotFound();
+                else
+                    throw;
+            }
+            return RedirectToAction(nameof(Index));
+        }
 
         // GET: Gym/Delete/5
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
@@ -134,6 +142,7 @@ public async Task<IActionResult> Edit(int id, Gym gym)
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var gym = await _context.Gyms.FindAsync(id);
